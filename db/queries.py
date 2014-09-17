@@ -94,8 +94,6 @@ def get_file_from_db(appconfig, file_id):
     return record[0]
 
 
-## Insert/Upsert
-
 def add_insert_hashtype(appconfig, hashtype):
     conn = sqlite3.connect(appconfig.database_file)
 
