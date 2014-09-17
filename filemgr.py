@@ -229,7 +229,7 @@ def main():
                         the import operation finishes.
                         """)
 
-    parser.add_argument("base_directory", help="""The root directory where files
+    parser.add_argument("--base_directory", help="""The root directory where files
                                                 will live. This is also where the database of file info will
                                                 be created. Enclose directories with spaces in double quotes.
                                                 This should be the first argument provided.
