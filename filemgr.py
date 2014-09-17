@@ -1,8 +1,10 @@
 import argparse
+import configparser
+from sys import exit
 
 from fs.queries import *
 from ops.import_files import import_files
-from ops. export_files import export_files
+from ops.export_files import export_files
 from ops.verify import verify
 
 # TODO use pathlib vs os.path calls? this is 3.4 only
@@ -28,15 +30,16 @@ BUFFER_SIZE = 65536  # 8192 # file reading buffer size 8192 * 64?
 # logger.addHandler(fh)
 
 
-class ApplicationConfiguration(object):
+class ApplicationConfiguration():
     """
     Holds configuration values used in various places
     """
 
-    def __init__(self):
-        self.__database_name = 'filemgr.db3'
-        self.__base_directory = ''
-        self.__database_file = ''
+    def __init__(self, config, args):
+        self.__database_name = config['General']['database_name']
+        self.__base_directory = os.path.abspath(args.base_directory) or os.path.abspath(
+            config['General']['base_directory']) or os.path.abspath('')
+        self.__database_file = os.path.join(self.base_directory, self.database_name)
         self.__delete_existing = ''
         self.__copy_new_destination = ''
         self.__export_directory = ''
@@ -64,7 +67,7 @@ class ApplicationConfiguration(object):
         return self.__database_file
 
     def set_database_file(self, database_file):
-        self.__database_file = database_file
+        pass  # todo remove
 
     database_file = property(get_database_file, set_database_file)
 
@@ -118,7 +121,7 @@ class ApplicationConfiguration(object):
 
 
 # def generate_missing_hashes(appconfig, file):
-#     """ Given file, look for missing hashes, generate them, and update the
+# """ Given file, look for missing hashes, generate them, and update the
 #     database """
 #
 #     return "not done yet"
@@ -320,25 +323,26 @@ def main():
                                                     archive in --export_directory.
                                                     """, action="store_true")
 
+
     # this stores our application parameters so it can get passed around to functions
-    appconfig = ApplicationConfiguration()
 
     args = parser.parse_args()
+    config = parse_config()
+    appconfig = ApplicationConfiguration(config, args)
 
-    if args.delete_existing:
-        appconfig.delete_existing = args.delete_existing
 
-    if args.delete_empty_directories:
-        appconfig.delete_empty_directories = args.delete_empty_directories
+    # if args.delete_existing:
+    #     appconfig.delete_existing = args.delete_existing
+    #
+    # if args.delete_empty_directories:
+    #     appconfig.delete_empty_directories = args.delete_empty_directories
+    #
+    # if args.copy_new_destination:
+    #     appconfig.copy_new_destination = args.copy_new_destination
 
-    if args.copy_new_destination:
-        appconfig.copy_new_destination = args.copy_new_destination
-
-    if args.base_directory:
-        appconfig.base_directory = args.base_directory
-        setup_base_directory(appconfig.base_directory)
-
-    appconfig.database_file = os.path.join(appconfig.base_directory, appconfig.database_name)
+    # if args.base_directory:
+    #     appconfig.base_directory = args.base_directory
+    #     setup_base_directory(appconfig.base_directory)
 
     print('\n\n')
 
@@ -412,6 +416,41 @@ def main():
     if not args.export_delta and not args.export_existing and not args.generate_hash_list and not args.import_from and not args.print_stats and not args.verify:
         print("You didn't ask me to do anything, so here are some statistics:")
         dump_stats(appconfig, 'lite')
+
+
+def parse_config():
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+
+    # Check for required sections.
+
+    if 'General' not in config:
+        gen_sec_msg = 'Invalid format for config.ini. Missing "[{0}]" section.'
+        fatal_error(gen_sec_msg.format('General'))
+
+    # Check for required keys.
+
+    if 'database_name' not in config['General']:
+        gen_key_msg = 'Invalid format for config.ini. Missing key "{0}" under "[{1}]" section.'
+        fatal_error(gen_key_msg.format('database_name', 'General'))
+
+    if 'base_directory' not in config['General']:
+        gen_key_msg = 'Invalid format for config.ini. Missing key "{0}" under "[{1}]" section.'
+        fatal_error(gen_key_msg.format('base_directory', 'General'))
+
+    # Check for invalid values
+
+    if not config['General']['database_name']:
+        gen_val_msg = 'Invalid format for config.ini. Invalid value for "{1}" key under "[{2}]" section.'
+        fatal_error(gen_val_msg.format('database_name', 'General'))
+
+    return config
+
+
+def fatal_error(msg='Unknown'):
+    print('\033[91m A fatal error has occurred: {0}\033[0m'.format(msg))
+    print('\033[93m The program will now exit.\033[0m')
+    exit(1)
 
 
 if __name__ == '__main__':
