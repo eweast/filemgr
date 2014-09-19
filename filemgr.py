@@ -40,7 +40,7 @@ class ApplicationConfiguration():
         self.__base_directory = os.path.abspath(args.base_directory) or os.path.abspath(
             config['General']['base_directory']) or os.path.abspath('')
         self.__database_file = os.path.join(self.base_directory, self.database_name)
-        self.__delete_existing = ''
+        self.__delete_existing = args.delete_existing if args.delete_existing is None else False
         self.__copy_new_destination = ''
         self.__export_directory = ''
         self.__rename_exported = False
@@ -330,6 +330,8 @@ def main():
     config = parse_config()
     appconfig = ApplicationConfiguration(config, args)
 
+
+    x = args.delete_existing if args.delete_existing is None else False
 
     # if args.delete_existing:
     #     appconfig.delete_existing = args.delete_existing
