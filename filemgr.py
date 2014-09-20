@@ -37,7 +37,7 @@ class ApplicationConfiguration():
 
     def __init__(self, config, args):
         self.__database_name = config['General']['database_name']
-        self.__base_directory = os.path.abspath(args.base_directory) or os.path.abspath(
+        self.__base_directory = os.path.abspath(args.base_directory or '') or os.path.abspath(
             config['General']['base_directory']) or os.path.abspath('')
         self.__database_file = os.path.join(self.base_directory, self.database_name)
         self.__delete_existing = args.delete_existing if args.delete_existing is None else False
