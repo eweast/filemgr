@@ -4,8 +4,6 @@ import datetime
 import settings
 
 
-
-
 def get_hash_id_from_hash_name(hash_name):
     conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
