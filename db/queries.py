@@ -1,10 +1,13 @@
 import sqlite3
 import os
 import datetime
+import settings
 
 
-def get_hash_id_from_hash_name(appconfig, hash_name):
-    conn = sqlite3.connect(appconfig.database_file)
+
+
+def get_hash_id_from_hash_name(hash_name):
+    conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
     c.execute(
         "SELECT hashID FROM hashtypes WHERE hashname = ?;", (hash_name,))
@@ -19,8 +22,8 @@ def get_hash_id_from_hash_name(appconfig, hash_name):
         return int(row[0])
 
 
-def check_file_exists_in_database(appconfig, hash_id, hash_value):
-    conn = sqlite3.connect(appconfig.database_file)
+def check_file_exists_in_database(hash_id, hash_value):
+    conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
     c.execute(
         "SELECT files.filepath, files.filesize FROM filehashes INNER JOIN files ON files.fileID = filehashes.fileID "
@@ -39,8 +42,8 @@ def check_file_exists_in_database(appconfig, hash_id, hash_value):
     return db_info
 
 
-def get_database_delta(appconfig, hash_set, hash_id):
-    conn = sqlite3.connect(appconfig.database_file)
+def get_database_delta(hash_set, hash_id):
+    conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
     sql = "SELECT files.fileID, files.filepath FROM filehashes INNER JOIN files ON files.fileID = filehashes.fileID WHERE filehashes.hashID = ? AND filehashes.filehash NOT in ({0})".format(
         ', '.join('?' for _ in hash_set))
@@ -56,8 +59,8 @@ def get_database_delta(appconfig, hash_set, hash_id):
     return rows
 
 
-def get_existing_hash_list(appconfig, hash_id):
-    conn = sqlite3.connect(appconfig.database_file)
+def get_existing_hash_list(hash_id):
+    conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
     c.execute(
         "SELECT fileID, filehash FROM filehashes WHERE filehashes.hashID = ?;", (hash_id, ))
@@ -81,8 +84,8 @@ def get_existing_hash_list(appconfig, hash_id):
     return existing_hashes
 
 
-def get_file_from_db(appconfig, file_id):
-    conn = sqlite3.connect(appconfig.database_file)
+def get_file_from_db(file_id):
+    conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
     c.execute(
         "SELECT filepath FROM files WHERE fileID = ?;", (file_id, ))
@@ -94,8 +97,8 @@ def get_file_from_db(appconfig, file_id):
     return record[0]
 
 
-def add_insert_hashtype(appconfig, hashtype):
-    conn = sqlite3.connect(appconfig.database_file)
+def add_insert_hashtype(hashtype):
+    conn = sqlite3.connect(settings.database_file)
 
     c = conn.cursor()
 
@@ -119,8 +122,8 @@ def add_insert_hashtype(appconfig, hashtype):
     return rowid
 
 
-def add_file_to_db(appconfig, fileinfo):
-    conn = sqlite3.connect(appconfig.database_file)
+def add_file_to_db(fileinfo):
+    conn = sqlite3.connect(settings.database_file)
 
     c = conn.cursor()
 
@@ -128,7 +131,7 @@ def add_file_to_db(appconfig, fileinfo):
     hashtypes = {}
 
     for key in fileinfo['hashes'].keys():
-        hashtypes[key] = add_insert_hashtype(appconfig, key)
+        hashtypes[key] = add_insert_hashtype(key)
 
     filename = fileinfo['inputfile']
     basefilename = os.path.split(filename)[-1]
@@ -153,8 +156,8 @@ def add_file_to_db(appconfig, fileinfo):
     conn.close()
 
 
-def file_exists_in_database(appconfig, fileinfo):
-    conn = sqlite3.connect(appconfig.database_file)
+def file_exists_in_database(fileinfo):
+    conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
     c.execute(
         "SELECT filehashID FROM files, filehashes, hashtypes WHERE hashtypes.hashid = filehashes.hashid "
@@ -171,13 +174,13 @@ def file_exists_in_database(appconfig, fileinfo):
         return True
 
 
-def get_sha1b32_from_database(appconfig):
+def get_sha1b32_from_database():
     # pull them out and cache on startup or when first pulled?
 
-    conn = sqlite3.connect(appconfig.database_file)
+    conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
 
-    hash_id = get_hash_id_from_hash_name(appconfig, "sha1b32")
+    hash_id = get_hash_id_from_hash_name("sha1b32")
 
     c.execute("SELECT filehash FROM filehashes WHERE hashid = ?;", (hash_id,))
 
@@ -190,12 +193,12 @@ def get_sha1b32_from_database(appconfig):
     return set(hashes)
 
 
-def init_db(appconfig):
+def init_db():
     # create, setup tables
     #one table is hashname
     #another is for files that references hashname pk
     #this allows for easy expanding if hashname is missing without schema changes
-    conn = sqlite3.connect(appconfig.database_file)
+    conn = sqlite3.connect(settings.database_file)
 
     c = conn.cursor()
 
@@ -253,9 +256,9 @@ def init_db(appconfig):
     conn.close()
 
 
-def add_import_path_to_db(appconfig, path_name, files_added_to_database, total_files, files_deleted, files_copied,
+def add_import_path_to_db(path_name, files_added_to_database, total_files, files_deleted, files_copied,
                           files_with_duplicate_hashes, files_with_invalid_extensions):
-    conn = sqlite3.connect(appconfig.database_file)
+    conn = sqlite3.connect(settings.database_file)
 
     c = conn.cursor()
 
@@ -269,8 +272,8 @@ def add_import_path_to_db(appconfig, path_name, files_added_to_database, total_f
     conn.close()
 
 
-def check_import_path_in_db(appconfig, path_name):
-    conn = sqlite3.connect(appconfig.database_file)
+def check_import_path_in_db(path_name):
+    conn = sqlite3.connect(settings.database_file)
 
     c = conn.cursor()
 
@@ -286,13 +289,13 @@ def check_import_path_in_db(appconfig, path_name):
     return dates
 
 
-def generate_hash_list(appconfig, hash_type, suppress_file_info):
-    outfile = os.path.join(appconfig.base_directory,
+def generate_hash_list(hash_type, suppress_file_info):
+    outfile = os.path.join(settings.base_directory,
                            "Exported hash list_" + datetime.datetime.now().strftime("%H%M%S%f") + '.tsv')
 
     file_count = 0
 
-    conn = sqlite3.connect(appconfig.database_file)
+    conn = sqlite3.connect(settings.database_file)
 
     file_cursor = conn.execute("SELECT files.filepath, files.filesize, files.fileID FROM files ORDER BY fileID")
 
@@ -350,8 +353,8 @@ def generate_hash_list(appconfig, hash_type, suppress_file_info):
     return file_count, outfile
 
 
-def get_hash_from_hash_id_and_file_id(appconfig, hash_id, file_id):
-    conn = sqlite3.connect(appconfig.database_file)
+def get_hash_from_hash_id_and_file_id(hash_id, file_id):
+    conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
     c.execute(
         "SELECT filehashes.filehash FROM filehashes WHERE filehashes.hashID = ? AND filehashes.fileID = ?;",
@@ -367,14 +370,14 @@ def get_hash_from_hash_id_and_file_id(appconfig, hash_id, file_id):
         return row[0]
 
 
-def get_stats(appconfig, stats_level):
+def get_stats(stats_level):
     # total files
     # total size
 
     total_store_files = 0
     total_store_size = 0
 
-    conn = sqlite3.connect(appconfig.database_file)
+    conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
     c.execute("SELECT COUNT(fileID) FROM files")
 
@@ -391,7 +394,7 @@ def get_stats(appconfig, stats_level):
     conn.close()
 
     if stats_level == 'full':
-        for r, d, files in os.walk(os.path.join(appconfig.base_directory, "files")):
+        for r, d, files in os.walk(os.path.join(settings.base_directory, "files")):
             total_store_files += len(files)
             for file in files:
                 total_store_size += os.path.getsize(os.path.join(r, file))
@@ -399,15 +402,15 @@ def get_stats(appconfig, stats_level):
     return total_db_files, total_db_size, total_store_files, total_store_size
 
 
-def check_db_to_fs(appconfig):
-    conn = sqlite3.connect(appconfig.database_file)
+def check_db_to_fs():
+    conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
     c.execute("SELECT fileid, filepath FROM files ORDER BY filepath")
 
     bad_files = []
 
     for row in c:
-        full_path = os.path.join(appconfig.base_directory, row[1]).lower()
+        full_path = os.path.join(settings.base_directory, row[1]).lower()
         if not os.path.isfile(full_path):
             bad_files.append(row[0])
             print("\t{} is in database but does not exist in file store!".format(full_path))
@@ -417,8 +420,8 @@ def check_db_to_fs(appconfig):
     return bad_files
 
 
-def get_files_from_db(appconfig):
-    conn = sqlite3.connect(appconfig.database_file)
+def get_files_from_db():
+    conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
     c.execute("SELECT filepath FROM files")
 
@@ -432,11 +435,11 @@ def get_files_from_db(appconfig):
     return file_names
 
 
-def get_fileid_from_fileinfo(appconfig, fileinfo):
-    conn = sqlite3.connect(appconfig.database_file)
+def get_fileid_from_fileinfo(fileinfo):
+    conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
 
-    hashid = get_hash_id_from_hash_name(appconfig, 'sha1b32')
+    hashid = get_hash_id_from_hash_name('sha1b32')
 
     c.execute("SELECT fileid FROM FILEHASHES WHERE hashID = ? AND filehash = ?;",
               (hashid, fileinfo['hashes']['sha1b32']))
@@ -448,8 +451,8 @@ def get_fileid_from_fileinfo(appconfig, fileinfo):
     return row[0]
 
 
-def delete_files_from_db(appconfig, files):
-    conn = sqlite3.connect(appconfig.database_file)
+def delete_files_from_db(files):
+    conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
 
     sql = "DELETE FROM FILEHASHES WHERE fileID in ({})".format(
@@ -467,11 +470,11 @@ def delete_files_from_db(appconfig, files):
     conn.close()
 
 
-def delete_file_from_db(appconfig, fileinfo):
-    conn = sqlite3.connect(appconfig.database_file)
+def delete_file_from_db(fileinfo):
+    conn = sqlite3.connect(settings.database_file)
     c = conn.cursor()
 
-    fileid = get_fileid_from_fileinfo(appconfig, fileinfo)
+    fileid = get_fileid_from_fileinfo(fileinfo)
 
     c.execute("DELETE FROM filehashes WHERE fileid = ?;", (fileid,))
     conn.commit()

@@ -1,24 +1,24 @@
 import zipfile
 from . import *
+import settings
 
 
-def export_files(appconfig, export_existing, file_name):
+def export_files(export_existing, file_name):
     """
     Copies files from file store to a directory
-    @param appconfig: basic config data
     @param export_existing: if true, export files in input file that are also in file store, else, export the opposite
     @param file_name: the file to read hash type and hashes from
     """
     hash_file = open(file_name)
     hash_name = hash_file.readline().strip().lower()
-    hash_id = get_hash_id_from_hash_name(appconfig, hash_name)
+    hash_id = get_hash_id_from_hash_name(hash_name)
 
     if hash_id == -1:
         print("Unknown hash type: '{}'. Export cancelled!".format(hash_name))
         return
 
     datetime_string = datetime.datetime.now().strftime("%H%M%S%f")
-    export_directory = os.path.join(appconfig.export_directory,
+    export_directory = os.path.join(settings.export_directory,
                                     "Export run " + datetime_string + " for {}".format(hash_name))
 
     if not os.path.exists(export_directory):
@@ -32,8 +32,8 @@ def export_files(appconfig, export_existing, file_name):
     log_file.write("Looking for hashes in '{}'\n\n".format(file_name))
     log_file.write("Hash type: {}\n".format(hash_name))
     print("\t\tHash type: {}\n".format(hash_name))
-    log_file.write("Zip exported: {}\n".format(appconfig.zip_exported))
-    log_file.write("Rename exported: {}\n\n".format(appconfig.rename_exported))
+    log_file.write("Zip exported: {}\n".format(settings.zip_exported))
+    log_file.write("Rename exported: {}\n\n".format(settings.rename_exported))
 
     if export_existing:
         export_type = "Existing"
@@ -53,7 +53,7 @@ def export_files(appconfig, export_existing, file_name):
             line = line.strip()
             hash_count += 1
 
-            (file_path, file_size) = check_file_exists_in_database(appconfig, hash_id, line)
+            (file_path, file_size) = check_file_exists_in_database(hash_id, line)
 
             # TODO This needs cleaned up in regard to the paths. the database should store things in one format
             # right now its all bunged up
@@ -62,7 +62,7 @@ def export_files(appconfig, export_existing, file_name):
                 print(
                     "\t\t({:,d}) File with hash '{}' found! Copying {:,d} bytes...".format(hash_count, line, file_size))
                 found_files += 1
-                abs_path = os.path.join(appconfig.base_directory, file_path)
+                abs_path = os.path.join(settings.base_directory, file_path)
 
                 if not os.path.isfile(abs_path):
                     front, ext = os.path.splitext(abs_path)
@@ -71,7 +71,7 @@ def export_files(appconfig, export_existing, file_name):
 
                 abs_path = abs_path.replace("\\", "/")
 
-                if appconfig.rename_exported and not hash_name == 'sha1b32':  # the default is sha1b32
+                if settings.rename_exported and not hash_name == 'sha1b32':  # the default is sha1b32
 
                     out_path = build_new_out_path(export_directory, line, file_path.replace("\\", "/"))
                 else:
@@ -97,7 +97,7 @@ def export_files(appconfig, export_existing, file_name):
         # when done, export files remaining in dictionary
 
         print("Getting existing hashes from database...")
-        existing_hash_list = get_existing_hash_list(appconfig, hash_id)
+        existing_hash_list = get_existing_hash_list(hash_id)
 
         print("Found {:,d} hashes in database!".format(len(existing_hash_list)))
 
@@ -109,21 +109,21 @@ def export_files(appconfig, export_existing, file_name):
 
         for value in existing_hash_list.values():
             # value is fileID for the file, so now we can get info on the file and export
-            db_name = get_file_from_db(appconfig, value)
+            db_name = get_file_from_db(value)
             if db_name:
-                abs_path = os.path.join(appconfig.base_directory, db_name)
+                abs_path = os.path.join(settings.base_directory, db_name)
                 if not os.path.isfile(abs_path):
                     front, ext = os.path.splitext(abs_path)
                     abs_path = front + ext.lower()
 
                 abs_path = abs_path.replace("\\", "/")
 
-                if appconfig.rename_exported and not hash_name == 'sha1b32':  # the default is sha1b32
+                if settings.rename_exported and not hash_name == 'sha1b32':  # the default is sha1b32
                     # sigh. we have to now get the appropriate hash value from the database and do trickery based on that
                     # we know the file id, so we can get the hash for the corresponding hash_type from the database
                     # since we also know the hash_id
 
-                    new_hash = get_hash_from_hash_id_and_file_id(appconfig, hash_id, value)
+                    new_hash = get_hash_from_hash_id_and_file_id(hash_id, value)
 
                     out_path = build_new_out_path(export_directory, new_hash, db_name)
                 else:
@@ -140,9 +140,9 @@ def export_files(appconfig, export_existing, file_name):
     hash_file.close()
     log_file.close()
 
-    if appconfig.zip_exported:
+    if settings.zip_exported:
 
-        zip_name = os.path.join(appconfig.export_directory,
+        zip_name = os.path.join(settings.export_directory,
                                 "Exported " + hash_name + " " + datetime_string + ".zip")
         print("\t\tZipping files to '{}'\n".format(zip_name))
         z_file = zipfile.ZipFile(zip_name, "w")

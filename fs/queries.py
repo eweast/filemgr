@@ -6,15 +6,15 @@ from hash_algos.ed2k import ED2KHash
 BUFFER_SIZE = 65536
 
 
-def check_fs_to_db(appconfig):
+def check_fs_to_db():
     bad_files = []
 
-    db_file_names = get_files_from_db(appconfig)
+    db_file_names = get_files_from_db()
 
-    for r, d, files in os.walk(os.path.join(appconfig.base_directory, "files")):
+    for r, d, files in os.walk(os.path.join(settings.base_directory, "files")):
         for file in files:
             full_path = os.path.join(r, file)
-            db_path = full_path.replace(appconfig.base_directory, "")
+            db_path = full_path.replace(settings.base_directory, "")
             db_path = db_path[1:]
 
             if not db_path in db_file_names:

@@ -2,6 +2,7 @@ import argparse
 import configparser
 from sys import exit
 
+import initialize
 from fs.queries import *
 from ops.import_files import import_files
 from ops.export_files import export_files
@@ -37,8 +38,7 @@ class ApplicationConfiguration():
 
     def __init__(self, config, args):
         self.__database_name = config['General']['database_name']
-        self.__base_directory = os.path.abspath(args.base_directory or '') or os.path.abspath(
-            config['General']['base_directory']) or os.path.abspath('')
+        self.__base_directory = self.get_base_directory_path(config, args)
         self.__database_file = os.path.join(self.base_directory, self.database_name)
         self.__delete_existing = args.delete_existing if args.delete_existing is None else False
         self.__copy_new_destination = ''
@@ -46,6 +46,11 @@ class ApplicationConfiguration():
         self.__rename_exported = False
         self.__zip_exported = False
         self.__delete_empty_directories = ''
+
+    @staticmethod
+    def get_base_directory_path(config, args):
+        dir = args.base_directory or config['General']['base_directory'] or ''
+        return os.path.abspath(dir)
 
     def get_database_name(self):
         return self.__database_name
@@ -161,13 +166,13 @@ def bytes_to_human(byte_value, to, bsize=1024):
     return r
 
 
-def dump_stats(appconfig, print_stats):
+def dump_stats(print_stats):
     print("\n*** Database statistics ***\n")
 
     if print_stats == 'full':
         print("\t *** Please be patient while file store statistics are calculated. This may take a while! ***\n")
 
-    (total_db_files, total_db_size, total_store_files, total_store_size) = get_stats(appconfig, print_stats)
+    (total_db_files, total_db_size, total_store_files, total_store_size) = get_stats(print_stats)
 
     print("Total files in database: {:,d}".format(total_db_files))
     print("Total size of files in database: {:,d} bytes ({:,f} MB, {:,f} GB, {:,f} TB)\n".format(total_db_size,
@@ -328,32 +333,16 @@ def main():
 
     args = parser.parse_args()
     config = parse_config()
-    appconfig = ApplicationConfiguration(config, args)
-
-
-    x = args.delete_existing if args.delete_existing is None else False
-
-    # if args.delete_existing:
-    #     appconfig.delete_existing = args.delete_existing
-    #
-    # if args.delete_empty_directories:
-    #     appconfig.delete_empty_directories = args.delete_empty_directories
-    #
-    # if args.copy_new_destination:
-    #     appconfig.copy_new_destination = args.copy_new_destination
-
-    # if args.base_directory:
-    #     appconfig.base_directory = args.base_directory
-    #     setup_base_directory(appconfig.base_directory)
+    initialize.configure_settings(config, args)
 
     print('\n\n')
 
-    init_db(appconfig)
+    init_db()
 
     # Process things in a sane order so things later down the list of options are as complete as possible
 
     if args.verify:
-        verify(appconfig)
+        verify()
 
     if args.import_from:  # since at least something was passed to this argument, lets try to import
         if extensions.intersection(auto_delete_extensions):
@@ -362,62 +351,26 @@ def main():
                     ", ".join(extensions.intersection(auto_delete_extensions))))
         else:
             directories = args.import_from.split(",")
-            import_files(appconfig, directories)
+            import_files(directories)
 
     if args.generate_hash_list:
-        (files_processed, hash_path) = generate_hash_list(appconfig, args.generate_hash_list, args.suppress_file_info)
+        (files_processed, hash_path) = generate_hash_list(args.generate_hash_list, args.suppress_file_info)
         if files_processed:
             print("\n\nHashes for {} files have been exported to '{}'\n".format(files_processed, hash_path))
         else:
             print("\n\nNothing to export! The database is empty!\n")
 
-    if args.export_existing or args.export_delta:
-        if args.export_directory:
-            appconfig.export_directory = os.path.normpath(args.export_directory)
-
-            print("\tExport directory set to: {}".format(appconfig.export_directory))
-
-            if not os.path.exists(appconfig.export_directory):
-                print("\tExport directory does not exist. Creating...")
-                os.makedirs(appconfig.export_directory)
-
-            if args.rename:
-                appconfig.rename_exported = True
-
-            if args.zip:
-                appconfig.zip_exported = True
-
-            file_name = ""
-
-            if args.export_existing:
-                file_name = args.export_existing
-
-            elif args.export_delta:
-                file_name = args.export_delta
-
-            if os.path.isfile(file_name):
-                export_files(appconfig, bool(args.export_existing), file_name)
-            else:
-                print("\t{} does not exist! Export cancelled!".format(file_name))
-
-        else:
-            print("\t--export_directory must be set when exporting files! Export cancelled.")
-
-            #see whats set in appconfig
-            #attrs = vars(appconfig)
-            #print('\n'.join("%s: %s" % item for item in attrs.items()))
-
-            # TODO have a built in web mode to allow searching, exporting etc?
-            # TODO Add error handling/try catch, etc
-            # TODO make backup of SQLite DB on startup (if newer than last)
-            # TODO add --purge_files that takes a list of files and cleans file store and DB of those hashes
-
     if args.print_stats:
-        dump_stats(appconfig, args.print_stats)
+        dump_stats(args.print_stats)
 
     if not args.export_delta and not args.export_existing and not args.generate_hash_list and not args.import_from and not args.print_stats and not args.verify:
         print("You didn't ask me to do anything, so here are some statistics:")
-        dump_stats(appconfig, 'lite')
+        dump_stats('lite')
+
+    # TODO have a built in web mode to allow searching, exporting etc?
+    # TODO Add error handling/try catch, etc
+    # TODO make backup of SQLite DB on startup (if newer than last)
+    # TODO add --purge_files that takes a list of files and cleans file store and DB of those hashes
 
 
 def parse_config():

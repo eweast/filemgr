@@ -9,7 +9,11 @@ extensions = {'.jpg', '.avi', '.ram', '.rm', '.wmv', '.pdf', '.mov', '.mp4', '.f
 auto_delete_extensions = {'.db', '.com', '.scr', '.htm', '.html', '.url', '.thm', '.tmp', '.ds_store', '.ico', '.rtf',
                           '.doc', '.ini', '.ascii', '.dat', '.svg'}
 
+
+## todo this needs to be moved to a utility section
 import sys
+
+
 def safeprint(s):
     try:
         print(s)
