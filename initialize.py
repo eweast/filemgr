@@ -1,5 +1,36 @@
 import os
 import settings
+import configparser
+from util.fatal_error import fatal_error
+
+
+def parse_config():
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+
+    # Check for required sections.
+
+    if 'General' not in config:
+        gen_sec_msg = 'Invalid format for config.ini. Missing "[{0}]" section.'
+        fatal_error(gen_sec_msg.format('General'))
+
+    # Check for required keys.
+
+    if 'database_name' not in config['General']:
+        gen_key_msg = 'Invalid format for config.ini. Missing key "{0}" under "[{1}]" section.'
+        fatal_error(gen_key_msg.format('database_name', 'General'))
+
+    if 'base_directory' not in config['General']:
+        gen_key_msg = 'Invalid format for config.ini. Missing key "{0}" under "[{1}]" section.'
+        fatal_error(gen_key_msg.format('base_directory', 'General'))
+
+    # Check for invalid values
+
+    if not config['General']['database_name']:
+        gen_val_msg = 'Invalid format for config.ini. Invalid value for "{1}" key under "[{2}]" section.'
+        fatal_error(gen_val_msg.format('database_name', 'General'))
+
+    return config
 
 
 def configure_settings(config, args):
@@ -52,3 +83,15 @@ def configure_settings(config, args):
             #print('\n'.join("%s: %s" % item for item in attrs.items()))
 
 
+def setup_base_directory(directory):
+    try:
+        if not os.path.exists(directory):
+            print('{} does not exist! Creating...'.format(directory))
+            os.mkdir(directory)
+
+        subdir = os.path.join(directory, 'files')
+
+        if not os.path.exists(subdir):
+            os.mkdir(subdir)
+    except:
+        raise

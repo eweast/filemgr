@@ -2,8 +2,7 @@ import hashlib
 import base64
 from db.queries import *
 from hash_algos.ed2k import ED2KHash
-
-BUFFER_SIZE = 65536
+from settings import BUFFER_SIZE
 
 
 def check_fs_to_db():
