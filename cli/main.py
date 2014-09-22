@@ -5,6 +5,7 @@ from ops.import_files import import_files
 from ops.verify import verify
 from cli.arguments import parse_arguments
 from initialize import parse_config
+from ops.search import *
 
 
 # todo use pathlib vs os.path calls? this is 3.4 only
@@ -58,7 +59,16 @@ def main():
     if args.print_stats:
         dump_stats(args.print_stats)
 
-    if not args.export_delta and not args.export_existing and not args.generate_hash_list and not args.import_from and not args.print_stats and not args.verify:
+    if args.search:
+        search_file(args.search)
+
+    is_any = False
+    for a in args.__dict__:
+        if args.__dict__[a] is not None and not isinstance(args.__dict__[a], bool):
+            is_any = True
+            break
+
+    if is_any is False:
         print("You didn't ask me to do anything, so here are some statistics:")
         dump_stats('lite')
 

@@ -28,6 +28,9 @@ def parse_arguments():
      options presented to correct any inconsistencies.
             """)
 
+    parser.add_argument("--search", help="""Searches the database for a hash matching that of the file
+        passed with this argument (include both path and file).""")
+
     import_group = parser.add_argument_group('Import options', 'These options determine how files are imported')
     import_group.add_argument(
         "--import_from", help="""List of comma separated directories to import
@@ -101,5 +104,6 @@ def parse_arguments():
     export_group.add_argument("--zip", help="""When true, all exported files will be added to a zip
                                                     archive in --export_directory.
                                                     """, action="store_true")
+
 
     return parser.parse_args()
