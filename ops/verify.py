@@ -1,4 +1,5 @@
 from . import *
+from fs.get_fileinfo import get_fileinfo
 from .import_files import import_files_work
 import settings
 
@@ -43,7 +44,7 @@ def verify():
 
             print("Adding files to database...")
             for file in fs_to_db_bad:
-                fileinfo = get_file_data(file)
+                fileinfo = get_fileinfo(file)
 
                 if file_exists_in_database(fileinfo):
                     # nuke it to be clean

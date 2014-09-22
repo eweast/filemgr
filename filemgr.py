@@ -8,7 +8,7 @@ from initialize import parse_config
 from util.byte_conversion import bytes_to
 
 
-# TODO use pathlib vs os.path calls? this is 3.4 only
+# todo use pathlib vs os.path calls? this is 3.4 only
 # http://docs.sqlalchemy.org/en/rel_0_9/orm/tutorial.html ??
 # http://docs.python.org/3.4/howto/logging-cookbook.html
 
@@ -100,7 +100,7 @@ def main():
     # Process things in a sane order so things later down the list of options are as complete as possible
 
     if args.verify:
-        verify()
+        verify() # This appears to detect/correct issues between the fs and db.
 
     if args.import_from:  # since at least something was passed to this argument, lets try to import
         if settings.extensions.intersection(settings.auto_delete_extensions):

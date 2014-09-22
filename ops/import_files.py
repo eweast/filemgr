@@ -1,5 +1,7 @@
 import re
+
 from . import *
+from fs.get_fileinfo import get_fileinfo
 import settings
 
 
@@ -130,7 +132,7 @@ def import_files_work(dirname):
                         #     "{} before fileinfo = get_file_data(full_path_name)".format(
                         #         datetime.datetime.now().strftime('%x %X')))
 
-                        fileinfo = get_file_data(full_path_name)
+                        fileinfo = get_fileinfo(full_path_name)
 
                         # logger.info("{} after fileinfo = get_file_data(full_path_name)".format(
                         #     datetime.datetime.now().strftime('%x %X')))
