@@ -1,7 +1,11 @@
-from . import *
+import os
+import sqlite3
+import shutil
+import settings
+from db.queries import delete_files_from_db, file_exists_in_database, delete_file_from_db
+from db.queries import get_files_from_db
 from fs.get_fileinfo import get_fileinfo
 from .import_files import import_files_work
-import settings
 
 
 def verify():
@@ -72,3 +76,39 @@ def verify():
             print("\nAdded {:,d} files to database!".format(files_added_to_database))
 
             print("\n\n*** Repair complete! ***")
+
+
+def check_fs_to_db():
+    bad_files = []
+
+    db_file_names = get_files_from_db()
+
+    for r, d, files in os.walk(os.path.join(settings.base_directory, "files")):
+        for file in files:
+            full_path = os.path.join(r, file)
+            db_path = full_path.replace(settings.base_directory, "")
+            db_path = db_path[1:]
+
+            if not db_path in db_file_names:
+                bad_files.append(full_path)
+                print("\t{} is in file store but does not exist in database!".format(full_path))
+
+    return bad_files
+
+
+def check_db_to_fs():
+    conn = sqlite3.connect(settings.database_file)
+    c = conn.cursor()
+    c.execute("SELECT fileid, filepath FROM files ORDER BY filepath")
+
+    bad_files = []
+
+    for row in c:
+        full_path = os.path.join(settings.base_directory, row[1]).lower()
+        if not os.path.isfile(full_path):
+            bad_files.append(row[0])
+            print("\t{} is in database but does not exist in file store!".format(full_path))
+
+    conn.close()
+
+    return bad_files

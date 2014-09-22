@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import datetime
+
 import settings
 
 
@@ -398,24 +399,6 @@ def get_stats(stats_level):
                 total_store_size += os.path.getsize(os.path.join(r, file))
 
     return total_db_files, total_db_size, total_store_files, total_store_size
-
-
-def check_db_to_fs():
-    conn = sqlite3.connect(settings.database_file)
-    c = conn.cursor()
-    c.execute("SELECT fileid, filepath FROM files ORDER BY filepath")
-
-    bad_files = []
-
-    for row in c:
-        full_path = os.path.join(settings.base_directory, row[1]).lower()
-        if not os.path.isfile(full_path):
-            bad_files.append(row[0])
-            print("\t{} is in database but does not exist in file store!".format(full_path))
-
-    conn.close()
-
-    return bad_files
 
 
 def get_files_from_db():

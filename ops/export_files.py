@@ -1,6 +1,7 @@
 import zipfile
-from . import *
+import os
 import settings
+import shutil
 
 
 def export_files(export_existing, file_name):
