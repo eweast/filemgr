@@ -2,6 +2,9 @@ import zipfile
 import os
 import settings
 import shutil
+import datetime
+from db.queries import get_hash_id_from_hash_name, check_file_exists_in_database, get_existing_hash_list, \
+    get_file_from_db, get_hash_from_hash_id_and_file_id
 
 
 def export_files(export_existing, file_name):
