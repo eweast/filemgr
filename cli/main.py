@@ -1,6 +1,7 @@
 from cli.dump_stats import dump_stats
 import initialize
 from db.queries import *
+from db import init_db
 from ops.import_files import import_files
 from ops.verify import verify
 from cli.arguments import parse_arguments

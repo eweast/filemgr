@@ -18,9 +18,10 @@ def search_file(filepath):
     except BlockingIOError:
         fatal_error('Unable to access, another process has opened {0}'.format(filepath))
 
-    row = check_file_exists_in_database(3, file_info['hashes']['sha1b32'])
+    row = check_file_exists_in_database(4, file_info['hashes']['sha1b32'])
 
-    if row:
+    if row[0] is not '':
         print('\033[94mFile found! See {0}\033[0m'.format(os.path.join(settings.base_directory, row[0])))
+        pass
     else:
-        print('\033[94mFile was not found in database.\033[0m')
+        print('\033[94mFile not found in database.\033[0m')
