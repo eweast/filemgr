@@ -105,9 +105,9 @@ def export_files(export_existing, file_name):
 
         print("Found {:,d} hashes in database!".format(len(existing_hash_list)))
 
-        for hash in hash_set:
-            if hash in existing_hash_list:
-                del existing_hash_list[hash]
+        for h in hash_set:
+            if h in existing_hash_list:
+                del existing_hash_list[h]
 
         print("After pruning there are {:,d} hashes to export.".format(len(existing_hash_list)))
 
